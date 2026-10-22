@@ -496,7 +496,7 @@ svg text { font-family: var(--body) }
       h += `<div class="sectionlabel">Appears in</div><ul class="evlist">${n.events.map(evItem).join("")}</ul>`;
     } else {
       const kids = EV.map(e => byId[e[0]]).filter(e => e.parents.includes(n.id)).sort((a, b) => a.year - b.year);
-      h += back() + `<div class="meta">${n.kind === "hub" ? "Major event" : "Event"} · ${span(n)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${extras(n.id)}${whyHtml(n.id)}`;
+      h += back() + `<div class="meta">${n.id.startsWith("g_") ? "Persecuted group" : n.kind === "hub" ? "Major event" : "Event"} · ${span(n)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${extras(n.id)}${whyHtml(n.id)}`;
       h += `<div class="sectionlabel">Connected to</div><div class="tags">${n.parents.map(p => tagBtn(byId[p])).join("")}</div>`;
       if (n.who.length) h += `<div class="sectionlabel">People</div><div class="tags">${n.who.map(p => tagBtn(byId[p])).join("")}</div>`;
       const inThreads = THREADS.filter(T => T.steps.some(([id]) => id === n.id));
