@@ -1,0 +1,649 @@
+<title>Iraq Fault Lines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: theme hubs ring the web, dated events orbit them, people hang off events. Timeline scrubber below, reading panel right. */
+:root {
+  --bg: #ecede7; --surface: #f7f7f2; --ink: #1b1e1a; --muted: #5d6359; --line: #d2d4ca; --faint: #c3c6bb;
+  --oil: #b57f0c; --coldwar: #c4382e; --wmd: #7647c9; --kurds: #1f8653; --iraniraq: #bd3a80; --israel: #2a69c2; --regime: #87654a; --terror: #0f8394;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121411; --surface: #1a1d19; --ink: #e8e9e2; --muted: #9ba196; --line: #2e322c; --faint: #40453e;
+  --oil: #e0aa35; --coldwar: #ef6b5f; --wmd: #a88af0; --kurds: #4cc089; --iraniraq: #e874b3; --israel: #6ba5f0; --regime: #c0a388; --terror: #3fc3d4; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121411; --surface: #1a1d19; --ink: #e8e9e2; --muted: #9ba196; --line: #2e322c; --faint: #40453e;
+  --oil: #e0aa35; --coldwar: #ef6b5f; --wmd: #a88af0; --kurds: #4cc089; --iraniraq: #e874b3; --israel: #6ba5f0; --regime: #c0a388; --terror: #3fc3d4; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; padding-inline: 16px; padding-block: 16px 32px }
+button, input { font: inherit; color: inherit }
+a { color: inherit }
+.wrap { max-width: 1480px; margin: 0 auto; display: grid; gap: 12px }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 5vw, 56px); line-height: .9; letter-spacing: .01em; text-transform: uppercase; margin: 0 }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 62ch }
+.yearbox { text-align: right }
+.yearbig { font-family: var(--display); font-weight: 800; font-size: clamp(44px, 7vw, 80px); line-height: .85; font-variant-numeric: tabular-nums }
+.yearlabel { font-family: var(--mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px 4px 8px; cursor: pointer; font-size: 13px }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c) }
+.chip[aria-pressed="true"] { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c) }
+.chips.filtering .chip[aria-pressed="false"] { opacity: .5 }
+.chip:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; min-height: 0 }
+.stage { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; height: clamp(480px, 70vh, 860px); overflow: hidden; touch-action: none }
+#graph { width: 100%; height: 100%; display: block; cursor: grab }
+.legend { position: absolute; left: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); background: color-mix(in srgb, var(--surface) 88%, transparent); padding: 6px 8px; border-radius: 4px; pointer-events: none }
+.legend span { display: inline-flex; align-items: center; gap: 6px }
+.lg-hub { width: 13px; height: 13px; border-radius: 50%; background: var(--ink) }
+.lg-big { width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--ink); background: var(--surface) }
+.lg-ev { width: 9px; height: 9px; background: var(--ink); transform: rotate(45deg) }
+.lg-p { width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--ink) }
+.stagetools { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 13px }
+.btn:hover { border-color: var(--muted) }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink) }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 12px; padding: 5px 9px; border-radius: 3px; max-width: 300px; z-index: 3 }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; height: clamp(480px, 70vh, 860px); overflow-y: auto; padding: 16px; min-width: 0 }
+.panel h2 { font-family: var(--display); font-weight: 800; font-size: 30px; line-height: 1; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .01em; text-wrap: balance }
+.meta { font-family: var(--mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em }
+.blurb { margin: 10px 0 8px; max-width: 65ch }
+.src { display: block; font-size: 12.5px; color: var(--muted); border-left: 2px solid var(--line); padding: 2px 0 2px 8px; margin-top: 6px }
+.src a { color: var(--ink); text-decoration-color: var(--faint); text-underline-offset: 2px }
+.src a:hover { text-decoration-color: var(--ink) }
+.src b { font-weight: 600; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 4px }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px }
+.tag { font-size: 12px; border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; background: none; cursor: pointer }
+.tag:hover { border-color: var(--muted) }
+.tag .d { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--muted)); margin-right: 5px; vertical-align: 1px }
+.evlist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 14px }
+.ev { border-top: 1px solid var(--line); padding-top: 12px }
+.ev h3 { margin: 0; font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: baseline }
+.ev h3 button { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font-weight: 600 }
+.ev h3 button:hover { text-decoration: underline }
+.ev .yr { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; flex: none }
+.ev .sw { flex: none; width: 9px; height: 9px; transform: rotate(45deg) translateY(-1px); background: var(--c) }
+.ev p { margin: 4px 0 0 }
+.back { margin-bottom: 12px }
+.empty { color: var(--muted); margin-top: 14px }
+.why { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px }
+.why li { font-size: 13px; line-height: 1.45; padding-left: 10px; border-left: 2px solid var(--line) }
+.why .who { font-weight: 600; margin-right: 4px }
+.why button.who { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 2px }
+.whylabel { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 8px }
+.drive { margin: 10px 0 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; font-size: 13.5px }
+.drive b { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; font-weight: 500 }
+.note { margin: 10px 0 0; padding: 9px 11px; border: 1px solid var(--line); border-radius: 4px; font-size: 13.5px; line-height: 1.5 }
+.note h4 { margin: 0 0 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500 }
+.note p { margin: 4px 0 0 }
+.note .src { margin-top: 6px }
+.note.toll { border-color: color-mix(in srgb, var(--coldwar) 45%, var(--line)) }
+.note dl { margin: 6px 0 0; display: grid; grid-template-columns: 92px 1fr; gap: 4px 10px }
+.note dt { font-weight: 600; font-size: 12.5px }
+.note dd { margin: 0 }
+.dead { position: relative; display: inline-block; margin-top: 6px }
+.dead > button { background: none; border: 1px solid var(--line); border-radius: 3px; padding: 2px 8px; font-size: 12.5px; cursor: pointer }
+.dead .pop { position: absolute; left: 0; top: calc(100% + 4px); z-index: 5; width: min(320px, 78vw); background: var(--ink); color: var(--surface); border-radius: 4px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; display: none; box-shadow: 0 6px 20px rgba(0,0,0,.25) }
+.dead .pop ul { margin: 0; padding-left: 16px; display: grid; gap: 5px }
+.dead .pop a { color: inherit }
+.dead .pop .psrc { margin-top: 8px; opacity: .8; font-size: 11.5px }
+.dead:hover .pop, .dead:focus-within .pop, .dead.open .pop { display: block }
+.tip ul { margin: 4px 0 0; padding-left: 14px }
+.threads { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.threads .meta { margin-right: 4px }
+.threads button { border: 1px solid var(--ink); background: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 13px; font-weight: 500 }
+.threads button[aria-pressed="true"] { background: var(--ink); color: var(--surface) }
+.steps { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: st; display: grid; gap: 0 }
+.steps li { position: relative; padding: 0 0 14px 34px; counter-increment: st }
+.steps li::before { content: counter(st); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 600 11px/22px var(--mono); text-align: center }
+.steps li::after { content: ""; position: absolute; left: 10px; top: 24px; bottom: 2px; width: 2px; background: var(--line) }
+.steps li:last-child::after { display: none }
+.steps .yr { font-family: var(--mono); font-size: 11.5px; color: var(--muted) }
+.steps button { background: none; border: 0; padding: 0; font-weight: 600; font-size: 14.5px; cursor: pointer; text-align: left; display: block }
+.steps button:hover { text-decoration: underline }
+.steps p { margin: 3px 0 0; font-size: 13.5px }
+.summary { margin: 10px 0 0; padding: 10px 12px; background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 4px; font-size: 14px }
+.pathline { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: 6 4; opacity: .75; pointer-events: none }
+.pathnum circle { fill: var(--ink) }
+.pathnum text { fill: var(--surface); font: 600 9.5px var(--mono); text-anchor: middle; dominant-baseline: central; pointer-events: none }
+.path ol { margin: 8px 0 0; padding-left: 0; list-style: none; display: grid; gap: 7px; border-left: 2px solid var(--line) }
+.path li { padding-left: 10px; position: relative }
+.path li::before { content: ""; position: absolute; left: -5px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--oil) }
+.path .pd { display: block; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .04em }
+.path .ps { font-size: 11.5px; color: var(--muted) }
+.find { display: flex; gap: 6px; align-items: center; margin-left: auto }
+.find input { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 4px 8px; width: 210px; max-width: 100% }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.sectionlabel { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 0 }
+.timeline { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 6px; display: grid; gap: 6px }
+.tlrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.tlrow input[type=range] { flex: 1 1 200px; accent-color: var(--ink) }
+.tlrow .hint { font-size: 12px; color: var(--muted) }
+.tlscroll { overflow-x: auto }
+#tl { display: block; width: 100%; min-width: 640px; height: 112px; cursor: pointer }
+.sources { color: var(--muted); font-size: 12.5px; max-width: 90ch }
+.sources summary { cursor: pointer; color: var(--ink); font-weight: 500 }
+.sources ol { padding-left: 20px; columns: 2 420px; column-gap: 32px }
+.sources li { break-inside: avoid; margin-bottom: 4px }
+svg text { font-family: var(--body) }
+.hublabel { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .02em; paint-order: stroke; stroke: var(--surface); stroke-width: 4px }
+.nlabel { font-size: 10.5px; fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none }
+.node { cursor: pointer; transition: opacity .25s }
+.link { transition: opacity .25s }
+@media (max-width: 920px) {
+  .main { grid-template-columns: 1fr }
+  .panel { height: auto; max-height: none }
+  .stage { height: clamp(420px, 64vh, 640px) }
+  .yearbox { text-align: left }
+}
+@media (prefers-reduced-motion: reduce) { .node, .link { transition: none } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Iraq Fault Lines</h1>
+      <p class="sub">The people and events behind the Iraq War, 1951 to 2011, linked by theme. Big events like the Iran-Iraq War act as hubs of their own. Every blurb cites one primary source.</p>
+    </div>
+    <div class="yearbox"><div class="yearlabel" id="yearLabel">Showing everything through</div><div class="yearbig" id="yearBig">2011</div></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="chips" id="chips" role="group" aria-label="Filter by theme"></div>
+    <form class="find" id="findForm"><label for="find" class="meta">Find</label><input id="find" list="names" placeholder="A person or event" autocomplete="off"><datalist id="names"></datalist></form>
+  </div>
+
+  <div class="threads" id="threads" role="group" aria-label="Throughlines"><span class="meta">Throughlines</span></div>
+
+  <div class="main">
+    <section class="stage" id="stage" aria-label="Relationship web">
+      <svg id="graph" role="img" aria-label="Network of themes, events and people"></svg>
+      <div class="stagetools">
+        <button class="btn" id="onlyYear" aria-pressed="false" title="Show only events from the selected year">This year only</button>
+        <button class="btn" id="resetView">Reset view</button>
+      </div>
+      <div class="legend">
+        <span><i class="lg-hub"></i>Theme</span>
+        <span><i class="lg-big"></i>Major event (hub)</span>
+        <span><i class="lg-ev"></i>Event</span>
+        <span><i class="lg-p"></i>Person</span>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="timeline" aria-label="Timeline">
+    <div class="tlrow">
+      <button class="btn" id="play">Play from 1951</button>
+      <button class="btn" id="prev" aria-label="Previous year">&larr;</button>
+      <button class="btn" id="next" aria-label="Next year">&rarr;</button>
+      <input type="range" id="year" min="1951" max="2011" value="2011" aria-label="Year">
+      <span class="hint">Click or drag the strip to jump to a year</span>
+    </div>
+    <div class="tlscroll"><svg id="tl"></svg></div>
+  </section>
+
+  <details class="sources" id="sources">
+    <summary>All sources (<span id="srcCount"></span>)</summary>
+    <ol id="srcList"></ol>
+    <p>Built as a companion to <i>Blowback</i> season 1. Links point to declassified US records (Foreign Relations of the United States, National Security Archive, presidential libraries), UN Security Council documents, US laws and congressional reports, official investigations, and Human Rights Watch field research. Each blurb cites the document that best supports it. The "Why they did it" notes summarize each side's aims as stated in that document or widely documented in the historical record. They are interpretation, so contested points, such as the CIA's role in 1963, are marked as debated.</p>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="data.js"></script>
+<script>
+(() => {
+  const YMIN = 1951, YMAX = 2011;
+  const themeIds = THEMES.map(t => t.id);
+  const css = getComputedStyle(document.documentElement);
+  const tc = id => `var(--${id})`;
+
+  // ---------- build graph ----------
+  const nodes = [], byId = {};
+  THEMES.forEach(t => { const n = { id: t.id, kind: "theme", label: t.label, theme: t.id }; nodes.push(n); byId[t.id] = n; });
+  EV.forEach(([id, y, y2, title, p, who, src, blurb, hub]) => {
+    const n = { id, kind: hub ? "hub" : "event", label: title, year: y, y2, parents: p, who, src, blurb };
+    nodes.push(n); byId[id] = n;
+  });
+  PEOPLE.forEach(([id, name, country, years, src, blurb]) => {
+    const n = { id, kind: "person", label: name, country, years, src, blurb, events: [] };
+    nodes.push(n); byId[id] = n;
+  });
+  // resolve each event's theme (walk up through hub events)
+  const themeOf = n => { if (n.kind === "theme") return n.id; const p = byId[n.parents[0]]; return p ? themeOf(p) : "regime"; };
+  const links = [];
+  EV.forEach(([id]) => {
+    const n = byId[id];
+    n.theme = themeOf(n);
+    n.themes = [...new Set(n.parents.map(pid => themeOf(byId[pid])))];
+    n.parents.forEach(pid => { if (!byId[pid]) console.warn("missing parent", pid); else links.push({ source: id, target: pid, kind: "theme", theme: themeOf(byId[pid]) }); });
+    n.who.forEach(pid => { const p = byId[pid]; if (!p) { console.warn("missing person", pid); return; } p.events.push(n); links.push({ source: pid, target: id, kind: "person", theme: n.theme }); });
+  });
+  PEOPLE.forEach(([id]) => {
+    const p = byId[id];
+    p.events.sort((a, b) => a.year - b.year);
+    p.first = p.events.length ? p.events[0].year : YMIN;
+    const counts = {}; p.events.forEach(e => e.themes.forEach(t => counts[t] = (counts[t] || 0) + 1));
+    p.theme = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "regime";
+    p.themes = Object.keys(counts);
+    if (!p.events.length) console.warn("person without events", id);
+  });
+  const missingSrc = nodes.filter(n => n.src && !S[n.src]); if (missingSrc.length) console.warn("missing sources", missingSrc.map(n => n.id));
+
+  // ---------- state ----------
+  const state = { year: YMAX, onlyYear: false, themes: new Set(), selected: null, hover: null, playing: null };
+
+  // ---------- visibility ----------
+  function eventOn(e) {
+    if (state.onlyYear) return e.year <= state.year && (e.y2 || e.year) >= state.year;
+    return e.year <= state.year;
+  }
+  function themeMatch(n) { return !state.themes.size || (n.themes || [n.theme]).some(t => state.themes.has(t)); }
+  function nodeOn(n) {
+    if (n.kind === "theme") return true;
+    if (n.kind === "person") return n.events.some(eventOn);
+    if (n.kind === "hub") return eventOn(n) || EV.some(e => e[4].includes(n.id) && eventOn(byId[e[0]]));
+    return eventOn(n);
+  }
+
+  // ---------- layout ----------
+  const stage = document.getElementById("stage");
+  const svg = d3.select("#graph");
+  let W = stage.clientWidth, H = stage.clientHeight;
+  const LW = 1200, LH = 900; // fixed layout space, fitted to the frame by zoom
+  const root = svg.append("g");
+  const gLinks = root.append("g"), gHubLabels = root.append("g"), gPath = root.append("g"), gNodes = root.append("g"), gLabels = root.append("g"), gPathNums = root.append("g");
+
+  function hubPos(i) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / themeIds.length;
+    return [LW / 2 + Math.cos(a) * 400, LH / 2 + Math.sin(a) * 330];
+  }
+  function placeHubs() {
+    themeIds.forEach((t, i) => { const n = byId[t]; [n.fx, n.fy] = hubPos(i); });
+  }
+  placeHubs();
+  // seed events near their themes, people near their first event
+  nodes.forEach(n => {
+    if (n.kind === "theme") { n.x = n.fx; n.y = n.fy; return; }
+  });
+  nodes.forEach(n => {
+    if (n.kind === "event" || n.kind === "hub") {
+      const avg = n.themes.map(t => byId[t]); n.x = d3.mean(avg, d => d.fx) + (Math.random() - .5) * 40; n.y = d3.mean(avg, d => d.fy) + (Math.random() - .5) * 40;
+    }
+  });
+  nodes.forEach(n => { if (n.kind === "person") { const e = n.events[0]; n.x = (e ? e.x : LW / 2) + (Math.random() - .5) * 30; n.y = (e ? e.y : LH / 2) + (Math.random() - .5) * 30; } });
+
+  const radius = n => n.kind === "theme" ? 15 : n.kind === "hub" ? 10 : n.kind === "event" ? 5.5 : 4.5 + Math.min(4, Math.sqrt(n.events.length));
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id)
+      .distance(l => l.kind === "theme" ? (l.target.kind === "hub" ? 60 : 90) : 42)
+      .strength(l => l.kind === "theme" ? 0.35 : 0.22))
+    .force("charge", d3.forceManyBody().strength(n => n.kind === "theme" ? -500 : n.kind === "hub" ? -260 : -90))
+    .force("collide", d3.forceCollide(n => radius(n) + (n.kind === "person" ? 9 : 6)))
+    .force("x", d3.forceX(LW / 2).strength(0.012))
+    .force("y", d3.forceY(LH / 2).strength(0.012))
+    .stop();
+  for (let i = 0; i < 400; i++) sim.tick();
+
+  // ---------- draw ----------
+  const linkSel = gLinks.selectAll("line").data(links).join("line")
+    .attr("class", "link")
+    .attr("stroke", l => tc(l.theme))
+    .attr("stroke-width", l => l.kind === "theme" ? 1.6 : 0.9)
+    .attr("stroke-dasharray", l => l.kind === "person" ? "2 3" : null);
+
+  const hubText = gHubLabels.selectAll("text").data(nodes.filter(n => n.kind === "theme")).join("text")
+    .attr("class", "hublabel").attr("text-anchor", "middle").attr("font-size", 17)
+    .attr("fill", n => tc(n.id)).text(n => n.label);
+
+  const nodeSel = gNodes.selectAll("g").data(nodes).join("g").attr("class", "node")
+    .attr("tabindex", 0).attr("role", "button").attr("aria-label", n => n.label);
+  nodeSel.each(function (n) {
+    const g = d3.select(this), r = radius(n);
+    if (n.kind === "theme") g.append("circle").attr("r", r).attr("fill", tc(n.id));
+    else if (n.kind === "hub") g.append("circle").attr("r", r).attr("fill", "var(--surface)").attr("stroke", tc(n.theme)).attr("stroke-width", 4);
+    else if (n.kind === "event") g.append("rect").attr("x", -r).attr("y", -r).attr("width", r * 2).attr("height", r * 2).attr("transform", "rotate(45)").attr("fill", tc(n.theme));
+    else g.append("circle").attr("r", r).attr("fill", "var(--surface)").attr("stroke", "var(--ink)").attr("stroke-width", 1.5);
+    g.append("circle").attr("class", "ring").attr("r", r + 4).attr("fill", "none").attr("stroke", "var(--ink)").attr("stroke-width", 2).attr("opacity", 0);
+  });
+
+  const labelSel = gLabels.selectAll("text").data(nodes.filter(n => n.kind !== "theme")).join("text")
+    .attr("class", "nlabel").attr("text-anchor", "middle")
+    .attr("font-weight", n => n.kind === "hub" ? 600 : n.kind === "person" ? 500 : 400)
+    .attr("font-size", n => n.kind === "hub" ? 12 : 10.5)
+    .text(n => n.kind === "person" ? n.label : n.label + " " + (n.y2 && n.y2 !== n.year ? n.year + "-" + String(n.y2).slice(2) : n.year));
+
+  function positions() {
+    linkSel.attr("x1", l => l.source.x).attr("y1", l => l.source.y).attr("x2", l => l.target.x).attr("y2", l => l.target.y);
+    nodeSel.attr("transform", n => `translate(${n.x},${n.y})`);
+    hubText.attr("x", n => n.x).attr("y", n => n.y - 24);
+    labelSel.attr("x", n => n.x).attr("y", n => n.y + radius(n) + 12);
+    drawPath();
+  }
+  function drawPath() {
+    gPath.selectAll("*").remove(); gPathNums.selectAll("*").remove();
+    if (!state || !state.thread) return;
+    const pts = state.thread.steps.map(([id]) => byId[id]);
+    gPath.append("path").attr("class", "pathline").attr("d", d3.line().curve(d3.curveCatmullRom.alpha(.5)).x(n => n.x).y(n => n.y)(pts));
+    const g = gPathNums.selectAll("g").data(pts).join("g").attr("class", "pathnum").attr("transform", n => `translate(${n.x + 9},${n.y - 9})`);
+    g.append("circle").attr("r", 7.5); g.append("text").text((n, i) => i + 1);
+  }
+  positions();
+  sim.on("tick", positions);
+
+  // drag
+  nodeSel.filter(n => n.kind !== "theme").call(d3.drag()
+    .on("start", (ev, n) => { if (!ev.active) sim.alphaTarget(0.15).restart(); n.fx = n.x; n.fy = n.y; })
+    .on("drag", (ev, n) => { n.fx = ev.x; n.fy = ev.y; })
+    .on("end", (ev, n) => { if (!ev.active) sim.alphaTarget(0); n.fx = null; n.fy = null; }));
+
+  // zoom
+  const zoom = d3.zoom().scaleExtent([0.5, 4]).on("zoom", ev => { root.attr("transform", ev.transform); state.k = ev.transform.k; render(); });
+  svg.call(zoom).on("dblclick.zoom", null);
+  function fitTransform() {
+    W = stage.clientWidth; H = stage.clientHeight;
+    const [x0, x1] = d3.extent(nodes, n => n.x), [y0, y1] = d3.extent(nodes, n => n.y);
+    const k = Math.min(1.6, W / (x1 - x0 + 120), (H - 40) / (y1 - y0 + 100));
+    return d3.zoomIdentity.translate(W / 2, H / 2 - 12).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+  }
+  svg.call(zoom.transform, fitTransform());
+  document.getElementById("resetView").onclick = () => svg.transition().duration(500).call(zoom.transform, fitTransform());
+
+  // ---------- interaction ----------
+  const tip = document.getElementById("tip");
+  nodeSel.on("mouseenter", (ev, n) => { state.hover = n; render(); showTip(ev, n); })
+    .on("mousemove", (ev, n) => showTip(ev, n))
+    .on("mouseleave", () => { state.hover = null; tip.hidden = true; render(); })
+    .on("click", (ev, n) => { ev.stopPropagation(); select(n); })
+    .on("keydown", (ev, n) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n); } });
+  svg.on("click", () => { if (state.selected) select(null); });
+  function showTip(ev, n) {
+    const r = stage.getBoundingClientRect();
+    tip.hidden = false;
+    tip.innerHTML = esc(n.kind === "person" ? `${n.label} · ${n.years}` : n.kind === "theme" ? n.label : `${n.label} · ${n.year}${n.y2 && n.y2 !== n.year ? "-" + n.y2 : ""}`);
+    const c = COUPS[n.id];
+    if (c) tip.innerHTML += `<div style="margin-top:4px;opacity:.85">${esc(c.toll)}</div>` + (c.dead ? `<ul>${c.dead.map(([d]) => `<li>${esc(d)}</li>`).join("")}</ul>` : "");
+    tip.style.left = Math.min(r.width - 200, ev.clientX - r.left + 12) + "px";
+    tip.style.top = (ev.clientY - r.top + 12) + "px";
+  }
+  function select(n) {
+    state.selected = n;
+    if (n && (n.kind === "event" || n.kind === "hub") && !eventOn(n)) setYear(n.year, true);
+    render(); renderPanel();
+  }
+
+  function neighbors(n) {
+    const s = new Set([n.id]);
+    links.forEach(l => { if (l.source.id === n.id) s.add(l.target.id); if (l.target.id === n.id) s.add(l.source.id); });
+    return s;
+  }
+
+  function render() {
+    const focus = state.hover || (state.selected && state.selected.kind !== "thread" ? state.selected : null);
+    let nb = focus ? neighbors(focus) : null;
+    if (!focus && state.thread) {
+      nb = new Set();
+      state.thread.steps.forEach(([id]) => { nb.add(id); byId[id].who.forEach(p => nb.add(p)); });
+    }
+    const k = state.k || 1;
+    nodeSel.each(function (n) {
+      const on = nodeOn(n), tm = themeMatch(n);
+      let o = on ? 1 : 0;
+      if (on && !tm && n.kind !== "theme") o = 0.15;
+      if (n.kind === "theme" && state.themes.size && !state.themes.has(n.id)) o = 0.3;
+      if (on && nb && !nb.has(n.id)) o = Math.min(o, 0.15);
+      d3.select(this).attr("opacity", o).style("pointer-events", on ? null : "none")
+        .select(".ring").attr("opacity", state.selected === n ? 1 : 0);
+      n._o = o;
+    });
+    linkSel.attr("opacity", l => {
+      if (!(l.source._o > 0 && l.target._o > 0)) return 0;
+      const ev = l.source.kind === "person" ? l.target : l.source;
+      if (!eventOn(ev) && ev.kind !== "hub") return 0;
+      let o = l.kind === "theme" ? 0.6 : 0.45;
+      if (state.themes.size && !state.themes.has(l.theme)) o = 0.06;
+      if (nb) o = (nb.has(l.source.id) && nb.has(l.target.id) && (!focus || l.source === focus || l.target === focus)) ? (focus ? 0.95 : 0.35) : 0.04;
+      return o;
+    });
+    hubText.attr("opacity", n => byId[n.id]._o);
+    labelSel.attr("opacity", n => {
+      if (!(n._o > 0.5)) return nb && nb.has(n.id) && n._o > 0 ? 1 : 0;
+      if (nb) return nb.has(n.id) ? 1 : 0;
+      if (n.kind === "hub") return 1;
+      if (state.onlyYear) return 1;
+      if (n.kind === "person") return 1;
+      return k > 1.6 ? 1 : 0;
+    });
+  }
+
+  // ---------- panel ----------
+  const panel = document.getElementById("panel");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const srcHtml = key => { const s = S[key]; return s ? `<span class="src"><b>Source</b><a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a></span>` : ""; };
+  const themeLabel = id => THEMES.find(t => t.id === id).label;
+  const span = e => e.y2 && e.y2 !== e.year ? `${e.year}-${e.y2}` : `${e.year}`;
+  const whyHtml = id => {
+    const m = MOT[id]; if (!m || !m.length) return "";
+    return `<div class="whylabel">Why they did it</div><ul class="why">${m.map(([a, t]) => byId[a] && byId[a].kind === "person"
+      ? `<li><button class="who" data-id="${a}">${esc(byId[a].label)}</button>${esc(t)}</li>`
+      : `<li><span class="who">${esc(a)}</span>${esc(t)}</li>`).join("")}</ul>`;
+  };
+  const srcLine = (key, label) => { const s = S[key]; return s ? `<span class="src"><b>${label || "Source"}</b><a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a></span>` : ""; };
+  const tollHtml = id => {
+    const c = COUPS[id]; if (!c) return "";
+    let h = `<div class="note toll"><h4>Death toll</h4><p>${esc(c.toll)}</p>`;
+    if (c.dead && c.dead.length) {
+      h += `<div class="dead"><button type="button" aria-expanded="false">Who died (${c.dead.length})</button><div class="pop" role="tooltip"><ul>${c.dead.map(([n, w]) => `<li><b>${esc(n)}</b><br>${esc(w)}</li>`).join("")}</ul>${[].concat(c.deadSrc).map(k => `<div class="psrc">Source: <a href="${S[k][1]}" target="_blank" rel="noopener">${esc(S[k][0])}</a></div>`).join("")}</div></div>`;
+    }
+    return h + srcLine(c.tollSrc, "Toll source") + `</div>`;
+  };
+  const regimeHtml = id => {
+    const c = COUPS[id]; if (!c || !c.regime) return "";
+    const r = c.regime;
+    return `<div class="note"><h4>What kind of government: ${esc(r.label)}</h4><dl><dt>Religion</dt><dd>${esc(r.religion)}</dd><dt>Politics</dt><dd>${esc(r.politics)}</dd><dt>Democratic?</dt><dd>${esc(r.democracy)}</dd><dt>Women's education and rights</dt><dd>${esc(r.women)}</dd></dl>${srcLine(c.regimeSrc)}</div>`;
+  };
+  const targetHtml = id => {
+    const t = TARGETED[id]; if (!t) return "";
+    return `<div class="note"><h4>Who was targeted and why: ${esc(t.group)}</h4><p><b>Who they were.</b> ${esc(t.who)}</p><p><b>Why they were targeted.</b> ${esc(t.why)}</p>${srcLine(t.src)}</div>`;
+  };
+  const weaponHtml = id => {
+    const w = WEAPONS[id]; if (!w) return "";
+    return `<div class="note"><h4>The weapons</h4><p><b>What was used.</b> ${esc(w.what)}</p>${srcLine(w.whatSrc)}<p><b>Why.</b> ${esc(w.why)}</p>${srcLine(w.whySrc)}</div>`;
+  };
+  const pathHtml = id => {
+    const k = PATH_ON[id]; if (!k) return "";
+    const P = PATHS[k];
+    return `<div class="note path"><h4>${esc(P.title)}</h4><p>${esc(P.intro)}</p><ol>${P.steps.map(([d, t, src]) => `<li><span class="pd">${esc(d)}</span>${esc(t)} <a class="ps" href="${S[src][1]}" target="_blank" rel="noopener" title="${esc(S[src][0])}">source</a></li>`).join("")}</ol></div>`;
+  };
+  const shieldHtml = id => {
+    if (!SHIELD_ON[id]) return "";
+    return `<div class="note"><h4>${esc(SHIELD.title)}</h4>${SHIELD.points.map(([h, t, src]) => `<p><b>${esc(h)}.</b> ${esc(t)} <a class="ps" href="${S[src][1]}" target="_blank" rel="noopener" title="${esc(S[src][0])}">source</a></p>`).join("")}</div>`;
+  };
+  const extras = id => tollHtml(id) + targetHtml(id) + weaponHtml(id) + shieldHtml(id) + regimeHtml(id) + pathHtml(id);
+  const evItem = e => `<li class="ev"><h3><span class="sw" style="--c:${tc(e.theme)}"></span><span class="yr">${span(e)}</span><button data-id="${e.id}">${esc(e.label)}</button></h3><p>${esc(e.blurb)}</p>${srcHtml(e.src)}${tollHtml(e.id)}${whyHtml(e.id)}</li>`;
+  const tagBtn = n => `<button class="tag" data-id="${n.id}" style="--c:${tc(n.theme)}"><span class="d"></span>${esc(n.label)}</button>`;
+
+  function renderPanel() {
+    const n = state.selected;
+    let h = "";
+    if (!n && state.thread) {
+      const T = state.thread;
+      h += `<div class="meta">Throughline · ${T.steps.length} steps</div><h2>${esc(T.title)}</h2><p class="summary">${esc(T.summary)}</p>`;
+      h += `<ol class="steps">${T.steps.map(([id, t]) => { const e = byId[id]; return `<li><span class="yr">${span(e)}</span><button data-id="${id}">${esc(e.label)}</button><p>${esc(t)}</p></li>`; }).join("")}</ol>`;
+      h += `<p class="empty">Click any step for its full blurb, motives and source. The connecting sentences restate what each event's cited source says.</p>`;
+      panel.innerHTML = h; panel.scrollTop = 0;
+      panel.querySelectorAll("[data-id]").forEach(b => b.onclick = () => select(byId[b.dataset.id]));
+      return;
+    }
+    if (!n) {
+      const list = EV.map(e => byId[e[0]]).filter(e => (state.onlyYear ? eventOn(e) : (e.year === state.year || (e.kind === "hub" && e.year <= state.year && e.y2 >= state.year))) && themeMatch(e))
+        .sort((a, b) => a.year - b.year || (a.kind === "hub" ? -1 : 1));
+      h += `<div class="meta">${state.themes.size ? [...state.themes].map(themeLabel).join(", ") : "All themes"}</div><h2>${state.year}</h2>`;
+      h += `<p class="blurb">Events from ${state.year}, plus any major event still under way. Click a node in the web or a name below to read its blurb and source.</p>`;
+      h += list.length ? `<ul class="evlist">${list.map(evItem).join("")}</ul>` : `<p class="empty">No events in this year${state.themes.size ? " for the selected themes" : ""}. Use the arrows or the strip below to move to another year.</p>`;
+    } else if (n.kind === "theme") {
+      const evs = EV.map(e => byId[e[0]]).filter(e => e.themes.includes(n.id)).sort((a, b) => a.year - b.year);
+      h += back() + `<div class="meta">Theme</div><h2 style="color:${tc(n.id)}">${esc(n.label)}</h2><p class="blurb">${evs.length} events connect to this theme, directly or through a major event.</p><ul class="evlist">${evs.map(evItem).join("")}</ul>`;
+    } else if (n.kind === "person") {
+      h += back() + `<div class="meta">${esc(n.country)} · ${esc(n.years)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${DRIVE[n.id] ? `<p class="drive"><b>What drove them</b>${esc(DRIVE[n.id])}</p>` : ""}${(PROFILE[n.id] || []).map(([hd, t, src]) => `<div class="note"><h4>${esc(hd)}</h4><p>${esc(t)}</p>${srcLine(src)}</div>`).join("")}`;
+      h += `<div class="sectionlabel">Themes</div><div class="tags">${n.themes.map(t => tagBtn(byId[t])).join("")}</div>`;
+      h += `<div class="sectionlabel">Appears in</div><ul class="evlist">${n.events.map(evItem).join("")}</ul>`;
+    } else {
+      const kids = EV.map(e => byId[e[0]]).filter(e => e.parents.includes(n.id)).sort((a, b) => a.year - b.year);
+      h += back() + `<div class="meta">${n.kind === "hub" ? "Major event" : "Event"} · ${span(n)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${extras(n.id)}${whyHtml(n.id)}`;
+      h += `<div class="sectionlabel">Connected to</div><div class="tags">${n.parents.map(p => tagBtn(byId[p])).join("")}</div>`;
+      if (n.who.length) h += `<div class="sectionlabel">People</div><div class="tags">${n.who.map(p => tagBtn(byId[p])).join("")}</div>`;
+      const inThreads = THREADS.filter(T => T.steps.some(([id]) => id === n.id));
+      if (inThreads.length) h += `<div class="sectionlabel">Part of these throughlines</div><div class="tags">${inThreads.map(T => `<button class="tag" data-thread="${T.id}">${esc(T.title)}</button>`).join("")}</div>`;
+      if (kids.length) h += `<div class="sectionlabel">Events within</div><ul class="evlist">${kids.map(evItem).join("")}</ul>`;
+    }
+    panel.innerHTML = h;
+    panel.scrollTop = 0;
+    panel.querySelectorAll("[data-id]").forEach(b => b.onclick = () => select(byId[b.dataset.id]));
+    panel.querySelectorAll("[data-thread]").forEach(b => b.onclick = () => setThread(b.dataset.thread));
+    const bk = panel.querySelector(".back"); if (bk) bk.onclick = () => select(null);
+    panel.querySelectorAll(".dead > button").forEach(b => b.onclick = () => { const o = b.parentElement.classList.toggle("open"); b.setAttribute("aria-expanded", o); });
+  }
+  const back = () => `<button class="btn back">&larr; Back to ${state.thread ? esc(state.thread.title) : state.year}</button>`;
+
+  // ---------- throughlines ----------
+  const threadBar = document.getElementById("threads");
+  THREADS.forEach(T => {
+    const b = document.createElement("button");
+    b.textContent = T.title; b.dataset.t = T.id; b.setAttribute("aria-pressed", "false");
+    b.onclick = () => setThread(state.thread && state.thread.id === T.id ? null : T.id);
+    threadBar.appendChild(b);
+  });
+  function setThread(id) {
+    state.thread = id ? THREADS.find(T => T.id === id) : null;
+    threadBar.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", state.thread && b.dataset.t === state.thread.id));
+    stopPlay(); state.onlyYear = false; onlyBtn.setAttribute("aria-pressed", "false");
+    state.selected = null;
+    setYear(YMAX, true);
+    drawPath();
+    if (state.thread) svg.transition().duration(500).call(zoom.transform, fitTransform());
+  }
+
+  // ---------- chips ----------
+  const chips = document.getElementById("chips");
+  THEMES.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.setAttribute("aria-pressed", "false"); b.style.setProperty("--c", tc(t.id));
+    b.innerHTML = `<span class="dot"></span>${t.label}`;
+    b.onclick = () => {
+      state.themes.has(t.id) ? state.themes.delete(t.id) : state.themes.add(t.id);
+      b.setAttribute("aria-pressed", state.themes.has(t.id));
+      chips.classList.toggle("filtering", state.themes.size > 0);
+      render(); renderPanel(); drawTimeline();
+    };
+    chips.appendChild(b);
+  });
+
+  // ---------- timeline ----------
+  const tl = d3.select("#tl");
+  const range = document.getElementById("year");
+  let x;
+  const ERAS = [[1951, 1958, "Monarchy"], [1958, 1963, "Qasim"], [1963, 1968, "Arif brothers"], [1968, 1979, "al-Bakr"], [1979, 2003, "Saddam Hussein"], [2003, 2011.99, "US occupation"]];
+  function drawTimeline() {
+    const w = Math.max(640, tl.node().clientWidth), h = 112;
+    tl.attr("viewBox", `0 0 ${w} ${h}`);
+    x = d3.scaleLinear([YMIN, YMAX + 1], [8, w - 8]);
+    tl.selectAll("*").remove();
+    const eraG = tl.append("g");
+    ERAS.forEach(([a, b, l], i) => {
+      eraG.append("rect").attr("x", x(a)).attr("y", 0).attr("width", x(b) - x(a)).attr("height", 16).attr("fill", i % 2 ? "var(--line)" : "var(--faint)").attr("opacity", .55);
+      if (x(b) - x(a) > 54) eraG.append("text").attr("x", x(a) + 4).attr("y", 12).attr("font-size", 10.5).attr("fill", "var(--ink)").text(l);
+    });
+    const hubs = EV.map(e => byId[e[0]]).filter(e => e.kind === "hub" && e.y2 > e.year);
+    hubs.forEach((e, i) => {
+      const row = i % 3;
+      tl.append("rect").attr("x", x(e.year)).attr("y", 20 + row * 7).attr("width", Math.max(3, x(e.y2 + 1) - x(e.year))).attr("height", 5).attr("rx", 2)
+        .attr("fill", tc(e.theme)).attr("opacity", themeMatch(e) ? .85 : .15).append("title").text(`${e.label}, ${span(e)}`);
+    });
+    const evs = EV.map(e => byId[e[0]]);
+    const perYear = d3.group(evs, e => e.year);
+    perYear.forEach(list => list.forEach((e, i) => {
+      tl.append("rect").attr("x", x(e.year) + 1).attr("y", 46 + i * 8).attr("width", Math.max(3, x(1) - x(0) - 2)).attr("height", 6).attr("rx", 1)
+        .attr("fill", tc(e.theme)).attr("opacity", themeMatch(e) ? 1 : .15).append("title").text(`${e.year}: ${e.label}`);
+    }));
+    const ax = tl.append("g").attr("transform", `translate(0,${h - 14})`);
+    d3.range(1955, 2011, 5).forEach(y => {
+      ax.append("text").attr("x", x(y + .5)).attr("y", 10).attr("text-anchor", "middle").attr("font-size", 10.5).attr("font-family", "var(--mono)").attr("fill", "var(--muted)").text(y);
+    });
+    tl.append("rect").attr("class", "cursor").attr("y", 0).attr("height", h - 16).attr("width", Math.max(3, x(1) - x(0))).attr("fill", "var(--ink)").attr("opacity", .14);
+    tl.append("line").attr("class", "cursorline").attr("y1", 0).attr("y2", h - 16).attr("stroke", "var(--ink)").attr("stroke-width", 2);
+    moveCursor();
+  }
+  function moveCursor() {
+    tl.select(".cursor").attr("x", x(state.year));
+    tl.select(".cursorline").attr("x1", x(state.year + 1)).attr("x2", x(state.year + 1));
+  }
+  const pick = ev => { const [mx] = d3.pointer(ev, tl.node()); setYear(Math.max(YMIN, Math.min(YMAX, Math.floor(x.invert(mx))))); };
+  tl.on("click", pick).call(d3.drag().on("drag", pick).on("start", pick));
+
+  function setYear(y, keepSel) {
+    state.year = y; range.value = y;
+    document.getElementById("yearBig").textContent = y;
+    document.getElementById("yearLabel").textContent = state.onlyYear ? "Showing only" : (y === YMAX ? "Showing everything through" : "Showing events through");
+    if (!keepSel) state.selected = null;
+    state.hover = null; tip.hidden = true;
+    moveCursor(); render(); renderPanel();
+  }
+  range.oninput = () => { stopPlay(); setYear(+range.value); };
+  document.getElementById("prev").onclick = () => { stopPlay(); setYear(Math.max(YMIN, state.year - 1)); };
+  document.getElementById("next").onclick = () => { stopPlay(); setYear(Math.min(YMAX, state.year + 1)); };
+  const playBtn = document.getElementById("play");
+  function stopPlay() { if (state.playing) { clearInterval(state.playing); state.playing = null; playBtn.textContent = "Play from 1951"; playBtn.setAttribute("aria-pressed", "false"); } }
+  playBtn.onclick = () => {
+    if (state.playing) return stopPlay();
+    setYear(state.year >= YMAX ? YMIN : state.year);
+    playBtn.textContent = "Pause"; playBtn.setAttribute("aria-pressed", "true");
+    state.playing = setInterval(() => { if (state.year >= YMAX) return stopPlay(); setYear(state.year + 1); }, 1500);
+  };
+  const onlyBtn = document.getElementById("onlyYear");
+  onlyBtn.onclick = () => { state.onlyYear = !state.onlyYear; onlyBtn.setAttribute("aria-pressed", state.onlyYear); setYear(state.year, true); };
+  document.addEventListener("keydown", e => {
+    if (e.target.closest("input,button,[role=button]")) return;
+    if (e.key === "ArrowLeft") { stopPlay(); setYear(Math.max(YMIN, state.year - 1)); }
+    if (e.key === "ArrowRight") { stopPlay(); setYear(Math.min(YMAX, state.year + 1)); }
+  });
+
+  // ---------- find ----------
+  const findable = nodes.filter(n => n.kind !== "theme");
+  document.getElementById("names").innerHTML = findable.map(n => `<option value="${esc(n.label)}">`).join("");
+  const findInput = document.getElementById("find");
+  const doFind = () => {
+    const q = findInput.value.trim().toLowerCase(); if (!q) return;
+    const n = findable.find(n => n.label.toLowerCase() === q) || findable.find(n => n.label.toLowerCase().includes(q));
+    if (!n) return;
+    stopPlay();
+    if (n.kind === "person" && !nodeOn(n)) setYear(YMAX, true);
+    select(n);
+    svg.transition().duration(500).call(zoom.translateTo, n.x, n.y);
+  };
+  findInput.addEventListener("change", doFind);
+  document.getElementById("findForm").addEventListener("submit", e => { e.preventDefault(); doFind(); });
+
+  // ---------- sources list ----------
+  const used = [...new Set(nodes.filter(n => n.src).map(n => n.src))];
+  document.getElementById("srcCount").textContent = used.length;
+  document.getElementById("srcList").innerHTML = Object.entries(S).filter(([k]) => used.includes(k))
+    .map(([, [t, u]]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");
+
+  // ---------- resize ----------
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
+    svg.call(zoom.transform, fitTransform());
+    drawTimeline();
+  }, 150); });
+
+  drawTimeline();
+  setYear(YMAX);
+})();
+</script>
