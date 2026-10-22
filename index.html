@@ -17,6 +17,7 @@
   --bg: #121411; --surface: #1a1d19; --ink: #e8e9e2; --muted: #9ba196; --line: #2e322c; --faint: #40453e;
   --oil: #e0aa35; --coldwar: #ef6b5f; --wmd: #a88af0; --kurds: #4cc089; --iraniraq: #e874b3; --israel: #6ba5f0; --regime: #c0a388; --terror: #3fc3d4; color-scheme: dark }
 * { box-sizing: border-box }
+[hidden] { display: none !important }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; padding-inline: 16px; padding-block: 16px 32px }
 button, input { font: inherit; color: inherit }
 a { color: inherit }
@@ -92,6 +93,23 @@ h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 5vw, 
 .dead .pop .psrc { margin-top: 8px; opacity: .8; font-size: 11.5px }
 .dead:hover .pop, .dead:focus-within .pop, .dead.open .pop { display: block }
 .tip ul { margin: 4px 0 0; padding-left: 14px }
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--ink) }
+.tabs button { border: 0; background: none; padding: 8px 16px 7px; font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: .03em; cursor: pointer; color: var(--muted) }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--surface) }
+.mapview { display: grid; gap: 12px }
+.psynote { max-width: 80ch; color: var(--muted); margin: 4px 0 0 }
+.psytools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-top: 10px }
+.psytools input { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 5px 9px; width: 220px; max-width: 100% }
+.psygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; margin-top: 12px }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0 }
+.pcard h3 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1; text-transform: uppercase; letter-spacing: .01em }
+.pcard .meta { margin-top: -2px }
+.pcard dl { margin: 0; display: grid; gap: 7px }
+.pcard dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.pcard dd { margin: 1px 0 0; font-size: 13.5px; line-height: 1.45 }
+.pcard dd a { font-size: 11.5px; color: var(--muted) }
+.pcard .tomap { justify-self: start }
+.pcard .bar { height: 3px; border-radius: 2px; background: var(--c) }
 .threads { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
 .threads .meta { margin-right: 4px }
 .threads button { border: 1px solid var(--ink); background: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 13px; font-weight: 500 }
@@ -151,6 +169,21 @@ svg text { font-family: var(--body) }
     <div class="yearbox"><div class="yearlabel" id="yearLabel">Showing everything through</div><div class="yearbig" id="yearBig">2011</div></div>
   </header>
 
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" id="tabMap" aria-selected="true" aria-controls="mapView">Map</button>
+    <button role="tab" id="tabPsych" aria-selected="false" aria-controls="psychView">Psychology</button>
+  </div>
+
+  <section id="psychView" role="tabpanel" aria-labelledby="tabPsych" hidden>
+    <p class="psynote" id="psyNote"></p>
+    <div class="psytools">
+      <div class="chips" id="psyCountries" role="group" aria-label="Filter by country"></div>
+      <input id="psyFind" type="search" placeholder="Search a name" aria-label="Search people">
+    </div>
+    <div class="psygrid" id="psyGrid"></div>
+  </section>
+
+  <div id="mapView" role="tabpanel" aria-labelledby="tabMap" class="mapview">
   <div class="toolbar">
     <div class="chips" id="chips" role="group" aria-label="Filter by theme"></div>
     <form class="find" id="findForm"><label for="find" class="meta">Find</label><input id="find" list="names" placeholder="A person or event" autocomplete="off"><datalist id="names"></datalist></form>
@@ -186,6 +219,8 @@ svg text { font-family: var(--body) }
     </div>
     <div class="tlscroll"><svg id="tl"></svg></div>
   </section>
+
+  </div>
 
   <details class="sources" id="sources">
     <summary>All sources (<span id="srcCount"></span>)</summary>
@@ -491,7 +526,7 @@ svg text { font-family: var(--body) }
       const evs = EV.map(e => byId[e[0]]).filter(e => e.themes.includes(n.id)).sort((a, b) => a.year - b.year);
       h += back() + `<div class="meta">Theme</div><h2 style="color:${tc(n.id)}">${esc(n.label)}</h2><p class="blurb">${evs.length} events connect to this theme, directly or through a major event.</p><ul class="evlist">${evs.map(evItem).join("")}</ul>`;
     } else if (n.kind === "person") {
-      h += back() + `<div class="meta">${esc(n.country)} · ${esc(n.years)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${DRIVE[n.id] ? `<p class="drive"><b>What drove them</b>${esc(DRIVE[n.id])}</p>` : ""}${(PROFILE[n.id] || []).map(([hd, t, src]) => `<div class="note"><h4>${esc(hd)}</h4><p>${esc(t)}</p>${srcLine(src)}</div>`).join("")}`;
+      h += back() + `<div class="meta">${esc(n.country)} · ${esc(n.years)}</div><h2>${esc(n.label)}</h2><p class="blurb">${esc(n.blurb)}</p>${srcHtml(n.src)}${DRIVE[n.id] ? `<p class="drive"><b>What drove them</b>${esc(DRIVE[n.id])}</p>` : ""}${PSYCH[n.id] ? `<div class="note"><h4>Psychology</h4><p><b>Shaped by.</b> ${esc(PSYCH[n.id].shaped[0])}</p><p><b>How they decided.</b> ${esc(PSYCH[n.id].decides[0])}</p><p><button class="btn" data-psych="${n.id}">Full profile</button></p></div>` : ""}${(PROFILE[n.id] || []).map(([hd, t, src]) => `<div class="note"><h4>${esc(hd)}</h4><p>${esc(t)}</p>${srcLine(src)}</div>`).join("")}`;
       h += `<div class="sectionlabel">Themes</div><div class="tags">${n.themes.map(t => tagBtn(byId[t])).join("")}</div>`;
       h += `<div class="sectionlabel">Appears in</div><ul class="evlist">${n.events.map(evItem).join("")}</ul>`;
     } else {
@@ -507,6 +542,7 @@ svg text { font-family: var(--body) }
     panel.scrollTop = 0;
     panel.querySelectorAll("[data-id]").forEach(b => b.onclick = () => select(byId[b.dataset.id]));
     panel.querySelectorAll("[data-thread]").forEach(b => b.onclick = () => setThread(b.dataset.thread));
+    panel.querySelectorAll("[data-psych]").forEach(b => b.onclick = () => showPsych(b.dataset.psych));
     const bk = panel.querySelector(".back"); if (bk) bk.onclick = () => select(null);
     panel.querySelectorAll(".dead > button").forEach(b => b.onclick = () => { const o = b.parentElement.classList.toggle("open"); b.setAttribute("aria-expanded", o); });
   }
@@ -630,8 +666,47 @@ svg text { font-family: var(--body) }
   findInput.addEventListener("change", doFind);
   document.getElementById("findForm").addEventListener("submit", e => { e.preventDefault(); doFind(); });
 
+  // ---------- psychology tab ----------
+  const tabMap = document.getElementById("tabMap"), tabPsych = document.getElementById("tabPsych");
+  const mapView = document.getElementById("mapView"), psychView = document.getElementById("psychView");
+  document.getElementById("psyNote").textContent = PSYCH_NOTE;
+  const psyState = { country: null, q: "" };
+  const countries = [...new Set(PEOPLE.map(p => p[2]))];
+  const psyC = document.getElementById("psyCountries");
+  ["All", ...countries].forEach(c => {
+    const b = document.createElement("button"); b.className = "chip"; b.style.setProperty("--c", "var(--ink)");
+    b.setAttribute("aria-pressed", c === "All"); b.textContent = c;
+    b.onclick = () => { psyState.country = c === "All" ? null : c; psyC.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawPsych(); };
+    psyC.appendChild(b);
+  });
+  document.getElementById("psyFind").addEventListener("input", e => { psyState.q = e.target.value.trim().toLowerCase(); drawPsych(); });
+  const psyLink = k => S[k] ? ` <a href="${S[k][1]}" target="_blank" rel="noopener" title="${esc(S[k][0])}">source</a>` : "";
+  function drawPsych() {
+    const list = PEOPLE.map(p => byId[p[0]]).filter(n => (!psyState.country || n.country === psyState.country) && (!psyState.q || n.label.toLowerCase().includes(psyState.q)));
+    document.getElementById("psyGrid").innerHTML = list.map(n => {
+      const P = PSYCH[n.id]; if (!P) return "";
+      const row = (lbl, f) => `<dt>${lbl}</dt><dd>${esc(f[0])}${psyLink(f[1])}</dd>`;
+      return `<article class="pcard" id="psy-${n.id}"><div class="bar" style="--c:${tc(n.theme)}"></div><h3>${esc(n.label)}</h3><div class="meta">${esc(n.country)} · ${esc(n.years)}</div><dl>${row("Shaped by", P.shaped)}${row("Worldview", P.worldview)}${row("How they decided", P.decides)}${row("Recurring pattern", P.pattern)}</dl>${DRIVE[n.id] ? `<dd style="margin:0"><b>What drove them:</b> ${esc(DRIVE[n.id])}</dd>` : ""}<button class="btn tomap" data-tomap="${n.id}">Show on map</button></article>`;
+    }).join("") || `<p class="empty">No one matches that search.</p>`;
+    document.querySelectorAll("[data-tomap]").forEach(b => b.onclick = () => { setTab("map"); select(byId[b.dataset.tomap]); svg.transition().duration(500).call(zoom.translateTo, byId[b.dataset.tomap].x, byId[b.dataset.tomap].y); });
+  }
+  function setTab(t) {
+    const psych = t === "psych";
+    psychView.hidden = !psych; mapView.hidden = psych;
+    tabPsych.setAttribute("aria-selected", psych); tabMap.setAttribute("aria-selected", !psych);
+    if (psych) { stopPlay(); drawPsych(); } else { svg.call(zoom.transform, fitTransform()); drawTimeline(); }
+  }
+  function showPsych(id) {
+    setTab("psych");
+    const el = document.getElementById("psy-" + id);
+    if (el) { el.scrollIntoView({ block: "start", behavior: "smooth" }); el.style.outline = "2px solid var(--ink)"; setTimeout(() => el.style.outline = "", 1600); }
+  }
+  tabMap.onclick = () => setTab("map");
+  tabPsych.onclick = () => setTab("psych");
+  if (location.hash === "#psychology") setTab("psych");
+
   // ---------- sources list ----------
-  const used = [...new Set(nodes.filter(n => n.src).map(n => n.src))];
+  const used = [...new Set(nodes.filter(n => n.src).map(n => n.src).concat(Object.values(PSYCH).flatMap(P => Object.values(P).map(f => f[1]))))];
   document.getElementById("srcCount").textContent = used.length;
   document.getElementById("srcList").innerHTML = Object.entries(S).filter(([k]) => used.includes(k))
     .map(([, [t, u]]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");
